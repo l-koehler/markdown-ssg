@@ -38,6 +38,11 @@ we can list things here:
         - more stuff
     ]
 ]
+and we can even do that in a order
+[ol
+    # entry
+    # entry 2 [ol # did you know # you can define these # lists in a single # line this way # (look @ md source)]
+]
 # and a heading
 immediately followed by text
 ## and a subheading

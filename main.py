@@ -83,12 +83,16 @@ for char_i in range(len(input_data)):
                         segment = "</i>" + segment
                     count -= 1
             output_data += segment
-        case "[":
-            if input_data[char_i+1:].startswith('ul'):
+
+        case "[" if not (state.escaping or state.block_code):
+            if input_data[char_i+1:].startswith('ul') or input_data[char_i+1:].startswith('ol'):
                 state.skip_next += 2
                 state.first_list_entry = True
                 escaping = False
-                state.tag_stack.append('ul')
+                if input_data[char_i+1:].startswith('ul'):
+                    state.tag_stack.append('ul')
+                else:
+                    state.tag_stack.append('ol')
                 segment = ""
                 for char in input_data[char_i+4:]:
                     if char == "\\":
@@ -103,19 +107,34 @@ for char_i in range(len(input_data)):
                             break
                     else:
                         segment += char
-                output_data += "<ul>"
-        case '-' if state.tag_stack[-1:] == ["ul"]:
+                if input_data[char_i+1:].startswith('ul'):
+                    output_data += "<ul>"
+                else:
+                    output_data += "<ol>"
+
+        case '-' if state.tag_stack[-1:] == ["ul"] and not (state.escaping or state.block_code):
             if state.first_list_entry:
                 output_data += "<li>"
                 state.first_list_entry = False
             else:
                 output_data += "</li><li>"
-        case ']':
+
+        case '#' if state.tag_stack[-1:] == ["ol"] and not (state.escaping or state.block_code):
+            if state.first_list_entry:
+                output_data += "<li>"
+                state.first_list_entry = False
+            else:
+                output_data += "</li><li>"
+
+        case ']' if not (state.escaping or state.block_code):
             # if the closing bracket is on its own line, discard one newline
             if input_data[char_i+1] == "\n":
                 state.skip_next += 1
             if state.tag_stack[-1:] == ["ul"]:
                 output_data += "</li></ul>"
+                state.tag_stack.pop()
+            elif state.tag_stack[-1:] == ["ol"]:
+                output_data += "</li></ol>"
                 state.tag_stack.pop()
             
         case _:
