@@ -27,14 +27,17 @@ fn main() {
 this is ==highlighted== and ~~redacted~~.
 
 we can list things here:
-- thing
-- thing
-  - subthing
-  - other text
-    - very deep indent
-- thing
-  that spans multiple lines
-
+[ul
+    - entry
+    - other entry
+    - multiline
+      will appear as one
+    - nested entry
+    [ul
+        - stuff
+        - more stuff
+    ]
+]
 # and a heading
 immediately followed by text
 ## and a subheading

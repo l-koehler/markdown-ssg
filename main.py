@@ -1,12 +1,17 @@
-import sys, math
+import sys, math, re
 
 input_data = open(sys.argv[1]).read()
 output_data = ""
 output_file = sys.argv[2]
 
 class State:
+    # Never affected, decremented once per loop 
+    skip_next = 0
+    
     # Overriding all formatting
     escaping = False
+    tag_stack = []
+    first_list_entry = False
     
     # Overriding all inline formatting
     block_math = False
@@ -32,6 +37,9 @@ for char_i in range(len(input_data)):
     is_last  = (char_i == len(input_data)-1)
     is_first = (char_i == 0)
     char = input_data[char_i]
+    if state.skip_next != 0:
+        state.skip_next -= 1
+        continue
     match char:
         case "\\":
             if state.escaping:
@@ -42,6 +50,8 @@ for char_i in range(len(input_data)):
                 output_data += "\n"
             elif state.escaping:
                 state.escaping = False
+            elif state.tag_stack[-1:] in [['ul'], ['ol']]:
+                pass
             else:
                 output_data += "<br>"
         case "*" if not state.escaping or state.block_code:
@@ -56,51 +66,58 @@ for char_i in range(len(input_data)):
                     count += 1
                 else:
                     break
+            segment = ""
             while count and not skip:
                 if count >= 2:
                     state.bold = not state.bold
                     if state.bold:
-                        output_data += "<b>"
+                        segment += "<b>"
                     else:
-                        output_data += "</b>"
+                        segment = "</b>" + segment
                     count -= 2
                 else:
                     state.italics = not state.italics
                     if state.italics:
-                        output_data += "<i>"
+                        segment += "<i>"
                     else:
-                        output_data += "</i>"
+                        segment = "</i>" + segment
                     count -= 1
-        case "-":
-            # -1: not a list
-            nesting_level = -1
-            preceding = 1
-            
-            # totally sane and comprehensible algorithm :D
-            while len(input_data) > (char_i + preceding) and nesting_level == -1:
-                prev = input_data[char_i-preceding]
-                if prev not in [' ', '\n']:
-                    break
-                else:
-                    if prev == '\n':
-                        nesting_level = 0
+            output_data += segment
+        case "[":
+            if input_data[char_i+1:].startswith('ul'):
+                state.skip_next += 2
+                state.first_list_entry = True
+                escaping = False
+                state.tag_stack.append('ul')
+                segment = ""
+                for char in input_data[char_i+4:]:
+                    if char == "\\":
+                        if escaping:
+                            segment += char
+                        escaping = not escaping
+                    elif char == "]":
+                        if escaping:
+                            segment += char
+                            escaping = not escaping
+                        else:
+                            break
                     else:
-                        preceding += 1
-            if nesting_level != 0:
-                # not a list
-                output_data += "-"
+                        segment += char
+                output_data += "<ul>"
+        case '-' if state.tag_stack[-1:] == ["ul"]:
+            if state.first_list_entry:
+                output_data += "<li>"
+                state.first_list_entry = False
             else:
-                # nesting_level is one and currently inaccurate
-                preceding -= 1 # remove the newline
-                if preceding == 0:
-                    nesting_level = 0
-                elif indent_size == 0:
-                    indent_size = preceding
-                    nesting_level = 1
-                else:
-                    nesting_level = math.ceil(preceding / indent_size)
-                # at this point, nesting level is accurate and zero-indexed
+                output_data += "</li><li>"
+        case ']':
+            # if the closing bracket is on its own line, discard one newline
+            if input_data[char_i+1] == "\n":
+                state.skip_next += 1
+            if state.tag_stack[-1:] == ["ul"]:
+                output_data += "</li></ul>"
+                state.tag_stack.pop()
+            
         case _:
             output_data += char
-
 open(output_file, 'w').write(output_data)

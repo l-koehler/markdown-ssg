@@ -38,12 +38,27 @@ the following things were added:
   ]
   ```
   will render `mathjax stuff in here` using mathjax
+  this will be in a div, you cant inline it yet
 - spamton voicelines
   use `[[thing]]` to create a fragment at the line containing thing (will still display thing in the output).
   (use like domain.invalid/page.html#thing to get to that line)
   `<h1>` to `<h6>` will do that for you.
 - `[embed url alt]` depends on the url. might be a `file://` thing.
   will try to embed videos/audio/text files, offers download links (named after the alt text) otherwise
+- you now have to annotate the start and end of lists
+  this is needed because i am going insane writing this thing and also the original syntax needs too much escaping
+  ```
+  [ul
+    - entry
+    - other entry
+      with extra text
+    - and one with
+      [ol
+        # a ordered sublist
+        # of 2 entries
+      ]
+  ]
+  ```
   
 the following things were removed:
 - using `*` for unordered lists, use `-` instead
