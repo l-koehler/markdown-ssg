@@ -28,7 +28,8 @@ class State:
     superscript = False
     subscript = False
 
-    allow_inline = not (escaping or block_math or block_code or inline_code)
+    def allow_inline(self):
+        return not (self.escaping | self.block_math | self.block_code | self.inline_code)
 
 class Deps:
     highlight = False
@@ -58,7 +59,7 @@ for char_i in range(len(input_data)):
                 pass
             else:
                 output_data += "<br>"
-        case "*" if state.allow_inline:
+        case "*" if state.allow_inline():
             # only ever process the first occurence,
             # skip other occurences
             skip = False
@@ -88,7 +89,7 @@ for char_i in range(len(input_data)):
                     count -= 1
             output_data += segment
 
-        case "[" if state.allow_inline:
+        case "[" if state.allow_inline():
             if input_data[char_i+1:].startswith('ul') or input_data[char_i+1:].startswith('ol'):
                 state.skip_next += 2
                 state.first_list_entry = True
@@ -142,7 +143,7 @@ for char_i in range(len(input_data)):
                 state.tag_stack.pop()
             else:
                 output_data += "]"
-        case '=' if state.allow_inline:
+        case '=' if state.allow_inline():
             if input_data[char_i-1] == '=':
                 pass
             elif input_data[char_i+1] != '=':
@@ -153,7 +154,7 @@ for char_i in range(len(input_data)):
             else:
                 output_data += "<span style=\"background-color:yellow;\">"
                 state.highlight = True
-        case '~' if state.allow_inline:
+        case '~' if state.allow_inline():
             if input_data[char_i-1] == '~':
                 pass
             elif input_data[char_i+1] != '~':
@@ -196,19 +197,20 @@ for char_i in range(len(input_data)):
                         output_data += "<code>"
                     else:
                         output_data += "</code>"
-        case "_" if state.allow_inline:
+        case "_" if state.allow_inline():
             state.subscript = not state.subscript
             if state.subscript:
                 output_data += "<sub>"
             else:
                 output_data += "</sub>"
-        case "^" if state.allow_inline:
+        case "^" if state.allow_inline():
             state.superscript = not state.superscript
             if state.superscript:
                 output_data += "<sup>"
             else:
                 output_data += "</sup>"
         case _:
+            state.escaping = False
             output_data += char
 # add javascript dependencies
 if deps.highlight:
