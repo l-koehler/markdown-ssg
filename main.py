@@ -2,6 +2,7 @@ import sys, math
 
 input_data = open(sys.argv[1]).read()
 output_data = ""
+output_start = "<!DOCTYPE html>"
 output_file = sys.argv[2]
 
 class State:
@@ -289,6 +290,12 @@ for char_i in range(len(input_data)):
             output_data += char
 # add javascript dependencies
 if deps.highlight:
-    output_data = "<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/default.min.css\"><script src=\"https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js\"></script><script>hljs.highlightAll();</script>" + output_data
+    if '--embed-js' in sys.argv:
+        from urllib.request import urlopen
+        js = urlopen("https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js").read().decode('utf-8')
+        css = urlopen("https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/default.min.css").read().decode('utf-8')
+        output_data = f"<style>{css}</style><script>{js}</script><script>hljs.highlightAll();</script>" + output_data
+    else:
+        output_data = "<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/default.min.css\"><script src=\"https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js\"></script><script>hljs.highlightAll();</script>" + output_data
 
-open(output_file, 'w').write(output_data)
+open(output_file, 'w').write(output_start+output_data)
