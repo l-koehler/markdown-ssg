@@ -10,6 +10,7 @@ class State:
     
     # Overriding all formatting
     escaping = False
+    custom_line_end = ""
     tag_stack = []
     first_list_entry = False
     
@@ -37,6 +38,7 @@ class Deps:
 
 state = State()
 deps = Deps()
+consumed_ids = []
 
 for char_i in range(len(input_data)):
     is_last  = (char_i == len(input_data)-1)
@@ -57,6 +59,9 @@ for char_i in range(len(input_data)):
                 state.escaping = False
             elif state.tag_stack[-1:] in [['ul'], ['ol']]:
                 pass
+            elif state.custom_line_end != "":
+                output_data += state.custom_line_end
+                state.custom_line_end = ""
             else:
                 output_data += "<br>"
         case "*" if state.allow_inline():
@@ -130,6 +135,25 @@ for char_i in range(len(input_data)):
                 state.first_list_entry = False
             else:
                 output_data += "</li><li>"
+        
+        case '#' if not (state.escaping or state.block_code):
+            skip = False
+            if not is_first:
+                if input_data[char_i-1] != '\n':
+                    skip = True
+            if not skip:
+                count = 1
+                while input_data[char_i+count] == "#":
+                    count += 1
+                id = ""
+                while input_data[char_i+count+1+len(id)] != "\n":
+                    id += input_data[char_i+count+1+len(id)]
+                id = id.replace(' ', '_')
+                while id in consumed_ids:
+                    id = "~" + id
+                consumed_ids.append(id)
+                output_data += f"<h{count} id=\"{id}\">"
+                state.custom_line_end += f"</h{count}>"
 
         case ']' if not (state.escaping or state.block_code):
             # if the closing bracket is on its own line, discard one newline
