@@ -34,11 +34,11 @@ the following things were added:
 - mathjax
   ```
   [math
-    mathjax stuff in here
+    \t\e\x
   ]
   ```
-  will render `mathjax stuff in here` using mathjax
-  this will be in a div, you cant inline it yet
+  will render `\t\e\x` using mathjax
+  this will be in a div, use `[ilmath tex-here]` for inline.
 - spamton voicelines
   use `[[thing]]` to create a fragment at the line containing thing (will still display thing in the output).
   (use like domain.invalid/page.html#thing to get to that line)

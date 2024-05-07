@@ -47,9 +47,12 @@ and we can even do that in a order
 immediately followed by text
 ## and a subheading
 aaaand we are done i think
-
+[math
+    $\a = \b$
+]
 (this isnt a link)
 
+this is regular text. [ilmath $\a\n\d$] it continues here.
 actually not done, jump [[here]] if you want to.
 also extra text :3
 
