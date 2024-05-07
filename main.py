@@ -1,4 +1,4 @@
-import sys, math, re
+import sys, math
 
 input_data = open(sys.argv[1]).read()
 output_data = ""
@@ -28,10 +28,14 @@ class State:
     superscript = False
     subscript = False
 
+    allow_inline = not (escaping or block_math or block_code or inline_code)
+
+class Deps:
+    highlight = False
+    mathjax = False
+
 state = State()
-# used for parsing only, not relevant to the output
-# set at runtime, dont change
-indent_size = 0
+deps = Deps()
 
 for char_i in range(len(input_data)):
     is_last  = (char_i == len(input_data)-1)
@@ -54,7 +58,7 @@ for char_i in range(len(input_data)):
                 pass
             else:
                 output_data += "<br>"
-        case "*" if not state.escaping or state.block_code:
+        case "*" if state.allow_inline:
             # only ever process the first occurence,
             # skip other occurences
             skip = False
@@ -84,7 +88,7 @@ for char_i in range(len(input_data)):
                     count -= 1
             output_data += segment
 
-        case "[" if not (state.escaping or state.block_code):
+        case "[" if state.allow_inline:
             if input_data[char_i+1:].startswith('ul') or input_data[char_i+1:].startswith('ol'):
                 state.skip_next += 2
                 state.first_list_entry = True
@@ -128,7 +132,7 @@ for char_i in range(len(input_data)):
 
         case ']' if not (state.escaping or state.block_code):
             # if the closing bracket is on its own line, discard one newline
-            if input_data[char_i+1] == "\n":
+            if input_data[char_i+1] == "\n" and state.tag_stack[-1:] in [["ul"],["ol"]]:
                 state.skip_next += 1
             if state.tag_stack[-1:] == ["ul"]:
                 output_data += "</li></ul>"
@@ -136,7 +140,78 @@ for char_i in range(len(input_data)):
             elif state.tag_stack[-1:] == ["ol"]:
                 output_data += "</li></ol>"
                 state.tag_stack.pop()
-            
+            else:
+                output_data += "]"
+        case '=' if state.allow_inline:
+            if input_data[char_i-1] == '=':
+                pass
+            elif input_data[char_i+1] != '=':
+                output_data += "="
+            elif state.highlight:
+                output_data += "</span>"
+                state.highlight = False
+            else:
+                output_data += "<span style=\"background-color:yellow;\">"
+                state.highlight = True
+        case '~' if state.allow_inline:
+            if input_data[char_i-1] == '~':
+                pass
+            elif input_data[char_i+1] != '~':
+                output_data += '~'
+            elif state.strike:
+                output_data += "</s>"
+                state.strike = False
+            else:
+                output_data += "<s>"
+                state.strike = True
+        case '`' if not state.escaping:
+            # if not the first, quit
+            if input_data[char_i-1] == '`':
+                pass
+            else:
+                count = 1
+                while input_data[char_i+count] == '`':
+                    count += 1
+                if count >= 3:
+                    state.block_code = not state.block_code
+                    if state.block_code:
+                        # get the language to use (might be none)
+                        lang = ""
+                        i = 0
+                        while input_data[char_i+i] not in [' ', '\n', '\\']:
+                            l_char = input_data[char_i+i]
+                            if l_char != "`":
+                                lang += l_char
+                            i += 1
+                        state.skip_next += len(lang) + count
+                        if lang == "":
+                            lang = "plaintext"
+                        output_data += f"<pre><code class=\"language-{lang}\">"
+                        deps.highlight = True
+                    else:
+                        output_data += "</code></pre>"
+                elif not state.block_code:
+                    state.inline_code = not state.inline_code
+                    if state.inline_code:
+                        output_data += "<code>"
+                    else:
+                        output_data += "</code>"
+        case "_" if state.allow_inline:
+            state.subscript = not state.subscript
+            if state.subscript:
+                output_data += "<sub>"
+            else:
+                output_data += "</sub>"
+        case "^" if state.allow_inline:
+            state.superscript = not state.superscript
+            if state.superscript:
+                output_data += "<sup>"
+            else:
+                output_data += "</sup>"
         case _:
             output_data += char
+# add javascript dependencies
+if deps.highlight:
+    output_data = "<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/default.min.css\"><script src=\"https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js\"></script><script>hljs.highlightAll();</script>" + output_data
+
 open(output_file, 'w').write(output_data)
