@@ -41,9 +41,16 @@ we can list things here:
 and we can even do that in a order
 [ol
     # entry
-    # entry 2 [ol # did you know # you can define these # lists in a single # line this way # (look @ md source)]
+    # entry 2 [ol # did you know # you can define these # lists in a single # line this way ]
 ]
 # and a heading
 immediately followed by text
 ## and a subheading
 aaaand we are done i think
+
+(this isnt a link)
+
+actually not done, jump [[here]] if you want to.
+also extra text :3
+
+we also support (links)[https://domain.invalid/index.php]!

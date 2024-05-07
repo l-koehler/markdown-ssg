@@ -121,6 +121,54 @@ for char_i in range(len(input_data)):
                     output_data += "<ul>"
                 else:
                     output_data += "<ol>"
+            elif input_data[char_i+1] == '[':
+                state.skip_next += 1
+                id = ""
+                while input_data[char_i+2+len(id):char_i+4+len(id)] !=']]':
+                    id += input_data[char_i+2+len(id)]
+                id = id.replace(' ', '_')
+                while id in consumed_ids:
+                    id = '~' + id
+                output_data += f"<span id=\"{id}\">"
+
+        case '(' if state.allow_inline():
+            text = ""
+            escaped = False
+            line = input_data[char_i:].split('\n')[0]
+            while True:
+                this_char = input_data[char_i+1+len(text)]
+                if this_char == '\\':
+                    if escaped:
+                        text += this_char
+                    escaped = not escaped
+                elif this_char == ')':
+                    if escaped:
+                        escaped = False
+                        text += this_char
+                    else:
+                        break
+                else:
+                    text += this_char
+            link = ""
+            while True:
+                this_char = input_data[char_i+3+len(text)+len(link)]
+                if this_char == '\\':
+                    if escaped:
+                        link += this_char
+                    escaped = not escaped
+                elif this_char == ']':
+                    if escaped:
+                        escaped = False
+                        link += this_char
+                    else:
+                        break
+                else:
+                    link += this_char
+            if (')[' in line) and (']' in line):
+                output_data += f"<a href=\"{link}\">{text}</a>"
+                state.skip_next += len(f"()[]{link}{text}")
+            else:
+                output_data += '('
 
         case '-' if state.tag_stack[-1:] == ["ul"] and not (state.escaping or state.block_code):
             if state.first_list_entry:
@@ -165,6 +213,9 @@ for char_i in range(len(input_data)):
             elif state.tag_stack[-1:] == ["ol"]:
                 output_data += "</li></ol>"
                 state.tag_stack.pop()
+            elif input_data[char_i+1] == "]":
+                state.skip_next += 1
+                output_data += "</span>"
             else:
                 output_data += "]"
         case '=' if state.allow_inline():

@@ -43,8 +43,7 @@ the following things were added:
   use `[[thing]]` to create a fragment at the line containing thing (will still display thing in the output).
   (use like domain.invalid/page.html#thing to get to that line)
   `<h1>` to `<h6>` will do that for you.
-- `[embed url alt]` depends on the url. might be a `file://` thing.
-  will try to embed videos/audio/text files, offers download links (named after the alt text) otherwise
+- `(#)[url]` will try to embed videos/audio/text files
 - you now have to annotate the start and end of lists
   this is needed because i am going insane writing this thing and also the original syntax needs too much escaping
   ```
