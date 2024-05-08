@@ -8,10 +8,8 @@ this should be \
 one line.
 
 there is also math: g^2^ \* v_1_
-
 > and a quote
-> - with attribution
-
+> with some extra text
 and some `inline code`.
 ```
 this is not inline

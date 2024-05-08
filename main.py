@@ -20,7 +20,8 @@ class State:
     # Overriding all inline formatting
     block_math = False
     block_code = False
-    
+    block_quote = False
+
     # Overriding other inline formatting
     inline_math = False
     inline_code = False
@@ -34,11 +35,13 @@ class State:
     subscript = False
 
     def allow_inline(self):
-        return not (self.escaping | self.block_math | self.block_code | self.inline_math | self.inline_code)
+        return not (self.escaping | self.block_math | self.block_code | self.block_quote | self.inline_math | self.inline_code)
 
 class Deps:
     highlight = False
     mathjax = False
+    css_blockquote = False
+    css_inlinecode = False
 
 state = State()
 deps = Deps()
@@ -70,6 +73,12 @@ for char_i in range(len(input_data)):
             elif state.custom_line_end != "":
                 output_data += state.custom_line_end
                 state.custom_line_end = ""
+            elif state.block_quote:
+                if not is_last and input_data[char_i+1] != ">":
+                    output_data += "</blockquote>"
+                    state.block_quote = False
+                else:
+                    output_data += "<br>"
             else:
                 output_data += "<br>"
         case "*" if state.allow_inline():
@@ -297,8 +306,9 @@ for char_i in range(len(input_data)):
                         output_data += "</code></pre>"
                 elif not state.block_code:
                     state.inline_code = not state.inline_code
+                    deps.css_inlinecode = True
                     if state.inline_code:
-                        output_data += "<code>"
+                        output_data += "<code class=\"inline-code\">"
                     else:
                         output_data += "</code>"
         case "_" if state.allow_inline():
@@ -313,6 +323,14 @@ for char_i in range(len(input_data)):
                 output_data += "<sup>"
             else:
                 output_data += "</sup>"
+
+        case ">" if not (state.escaping or state.inline_math or state.inline_code or state.block_math or state.block_code):
+            if input_data[char_i-1] == "\n":
+                if state.block_quote == False:
+                    output_data += "<blockquote style=\"background-color: #f3f3f3\">"
+                state.block_quote = True
+                deps.css_blockquote = True
+        
         case _:
             state.escaping = False
             output_data += char
@@ -331,5 +349,8 @@ if deps.mathjax:
         output_data = "<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']]},svg:{fontCache:'global'},options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'tex2jax_process'}};</script><script type=\"text/javascript\" id=\"MathJax-script\">" + js + "</script>" + output_data
     else:
         output_data = "<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']]},svg:{fontCache:'global'},options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'tex2jax_process'}};</script><script type=\"text/javascript\" id=\"MathJax-script\" async src=\"https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js\"></script>" + output_data
-
+if deps.css_blockquote:
+    output_data = "<style>blockquote {background-color:#f3f3f3;margin-left:20px;border-left:3px solid gray;padding: 0 5px 0 5px;margin-right:50px;display:table;}</style>" + output_data
+if deps.css_inlinecode:
+    output_data = "<style>.inline-code {background-color:#f3f3f3;padding:1px 3px 1px 3px;border-radius:2px;}</style>" + output_data
 open(output_file, 'w').write(output_start+output_data+output_end)
